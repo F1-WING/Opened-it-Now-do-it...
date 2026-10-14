@@ -173,6 +173,28 @@ header .spark.b {animation-delay:.6s;}
 
 .error-message {font-size:1.4rem;text-align:center;margin-top:40px;color:#fff;font-weight:bold;}
 
+/* music on/off control (below the smile) */
+.music-ctl {margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0;animation: ctlIn .8s ease .4s forwards;}
+@keyframes ctlIn {from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.music-ctl .before {font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75;}
+.music-btn {
+  display:inline-flex;align-items:center;gap:10px;padding:10px 20px 10px 14px;border-radius:30px;
+  border:1.5px solid rgba(255,187,51,.5);background:rgba(255,255,255,.1);color:#fff;
+  font-size:.9rem;cursor:pointer;font-family:inherit;
+  transition:transform .2s ease, background .3s ease, box-shadow .3s ease, border-color .3s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.music-btn:active {transform:scale(.92);}
+.music-btn svg {width:26px;height:26px;flex-shrink:0;}
+.music-btn .note {fill:var(--primary);transition:fill .3s ease;}
+.music-btn .slash {stroke:#fff;stroke-width:2.6;stroke-linecap:round;opacity:0;transition:opacity .25s ease;}
+.music-btn.on {box-shadow:0 0 18px rgba(255,187,51,.35);}
+.music-btn.on svg {animation: noteBob 1.4s ease-in-out infinite;}
+@keyframes noteBob {0%,100%{transform:translateY(0) rotate(-6deg);}50%{transform:translateY(-3px) rotate(6deg);}}
+.music-btn.off {border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.05);color:rgba(255,255,255,.7);box-shadow:none;}
+.music-btn.off .note {fill:rgba(255,255,255,.5);}
+.music-btn.off .slash {opacity:1;}
+
 /* === MOBILE === */
 @media (max-width: 600px) {
   :root { --header-h: 62px; }
@@ -375,6 +397,7 @@ async function showMessage() {
   card.querySelector('.chunk.final').appendChild(smile);
   await sleep(120);
   smile.classList.add('in');
+  if (window.addMusicControl) window.addMusicControl(card);
   sparkleBurst(card);
 }
 
@@ -428,6 +451,63 @@ function onInitialSearch() { showMessage(); }
   window.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') enter();
   });
+
+  /* ===== Music stops when she leaves / goes back ===== */
+  let userOff = false;   // true when she turned the music off with the button
+
+  function pauseMusic() { bgm.pause(); }
+  function resumeMusic() {
+    if (!entered || userOff) return;
+    const p = bgm.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) pauseMusic(); else resumeMusic();
+  });
+  window.addEventListener('pagehide', pauseMusic);
+  window.addEventListener('pageshow', function (e) { if (e.persisted) resumeMusic(); });
+  document.addEventListener('freeze', pauseMusic);
+
+  /* ===== Music on/off button (shown below the smile) ===== */
+  window.addMusicControl = function (card) {
+    const old = card.querySelector('.music-ctl');
+    if (old) old.remove();
+
+    const ctl = document.createElement('div');
+    ctl.className = 'music-ctl';
+    ctl.innerHTML = `
+      <div class="before">Before you go back</div>
+      <button type="button" class="music-btn">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path class="note" d="M9 3v11.3A3.6 3.6 0 1 0 11 17.5V8h7V3H9z"/>
+          <line class="slash" x1="3" y1="3" x2="21" y2="21"/>
+        </svg>
+        <span class="label"></span>
+      </button>`;
+    card.appendChild(ctl);
+
+    const btn = ctl.querySelector('.music-btn');
+    const label = ctl.querySelector('.label');
+
+    function render() {
+      const on = !userOff && !bgm.paused;
+      btn.classList.toggle('on', on);
+      btn.classList.toggle('off', !on);
+      label.textContent = on ? 'Music on · tap to turn off' : 'Music off · tap to turn on';
+    }
+
+    btn.addEventListener('click', function () {
+      if (userOff) { userOff = false; resumeMusic(); }
+      else { userOff = true; pauseMusic(); }
+      if (navigator.vibrate) navigator.vibrate(10);
+      setTimeout(render, 60);
+    });
+
+    bgm.addEventListener('play', render);
+    bgm.addEventListener('pause', render);
+    render();
+  };
 })();
 </script>
 
