@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Good Evening</title>
+<style>
+/* === GLOBAL COLOR THEMES (same as HypeNews) === */
+:root {
+  --bg-gradient: linear-gradient(135deg,#190537,#2f2fa2,#4c4177,#e96443);
+  --f1-gradient: linear-gradient(135deg,#001e26,#004d73,#00c1d4);
+  --card-bg: rgba(255,255,255,0.08);
+  --glass: blur(18px);
+  --text: #fff;
+  --primary: #ffbb33;
+  --accent: #00e5ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+h1,h2,h3,p { margin: 0; }
+
+/* Splash */
+#splash {
+  position: fixed;
+  top:0;left:0;right:0;bottom:0;
+  background: var(--bg-gradient);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:3000;
+  cursor:pointer;
+  transition: opacity .7s ease, visibility .7s ease;
+}
+#splash.hide { opacity:0; visibility:hidden; pointer-events:none; }
+
+/* thin, minimal "tap to continue" line, now right below the emoji */
+#splash .tap-hint {
+  position:relative; margin-top:26px; padding:12px 26px; text-align:center;
+  color:#fff; font-size:.85rem; font-weight:200; letter-spacing:.32em; text-transform:lowercase;
+  border-radius:30px; opacity:0;
+  animation: hintIn 1s ease 1.6s forwards, hintPulse 2.6s ease-in-out 2.6s infinite;
+  user-select:none; -webkit-tap-highlight-color:transparent;
+}
+#splash .tap-hint.pressed {
+  animation: tapPress .35s ease forwards;
+}
+@keyframes hintIn { to { opacity:.75; } }
+@keyframes hintPulse { 0%,100%{opacity:.75;} 50%{opacity:.25;} }
+@keyframes tapPress {
+  0%   { transform:scale(1);    opacity:.75; background:rgba(255,255,255,0);   box-shadow:0 0 0 rgba(255,187,51,0); }
+  45%  { transform:scale(.88);  opacity:1;   background:rgba(255,255,255,.22); box-shadow:0 0 22px rgba(255,187,51,.6); }
+  100% { transform:scale(1.05); opacity:1;   background:rgba(255,255,255,.1);  box-shadow:0 0 30px rgba(0,229,255,.5); }
+}
+#splash h1 { font-size:2.6rem; color: var(--primary); text-align:center; animation: scaleIn 0.8s cubic-bezier(0.23,1,0.32,1);}
+#splash .underline {height:4px;background:var(--accent);width:0;margin-top:10px;border-radius:2px;animation: growLine 0.8s ease 0.3s forwards;}
+#splash .emoji {font-size:3.4rem;margin-top:14px;animation: emojiPop 1s cubic-bezier(0.18,0.89,0.32,1.28) 0.4s both, bob 2s ease-in-out 1.4s infinite;}
+@keyframes scaleIn {0%{transform:scale(0) rotate(-10deg);opacity:0;}70%{transform:scale(1.1) rotate(3deg);opacity:1;}100%{transform:scale(1);}}
+@keyframes growLine { to {width:160px;} }
+@keyframes fadeOut { to {opacity:0;visibility:hidden;} }
+@keyframes emojiPop {0%{transform:scale(0) rotate(-40deg);opacity:0;}60%{transform:scale(1.35) rotate(12deg);opacity:1;}100%{transform:scale(1) rotate(0);opacity:1;}}
+@keyframes bob {0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-10px) rotate(6deg);}}
+
+/* Header */
+header {
+  text-align:center;padding:20px;font-size:2rem;font-weight:bold;color:var(--primary);
+  backdrop-filter:var(--glass);background:var(--card-bg);position:sticky;top:0;z-index:1000;
+  box-shadow:0 4px 15px rgba(0,0,0,0.4);
+}
+header .cool {display:inline-block;margin-left:8px;animation: bob 2.2s ease-in-out infinite;}
+header .spark {display:inline-block;font-size:1.2rem;margin-left:2px;animation: twinkle 1.6s ease-in-out infinite;}
+header .spark.b {animation-delay:.6s;}
+@keyframes twinkle {0%,100%{opacity:.2;transform:scale(.6) rotate(0);}50%{opacity:1;transform:scale(1.2) rotate(25deg);}}
+
+.dark-toggle {
+  position:fixed;top:20px;right:20px;background:var(--primary);color:white;
+  padding:10px;border:none;border-radius:50%;cursor:pointer;transition:transform 0.3s;z-index:1100;
+}
+.dark-toggle:hover { transform: rotate(20deg); }
+
+/* Search */
+.search-bar {display:flex;gap:10px;justify-content:center;padding:20px;flex-wrap:wrap;}
+.search-bar input {padding:12px;border-radius:10px;border:none;flex:1;max-width:500px;}
+.search-bar button {padding:12px 18px;background:var(--primary);border:none;border-radius:10px;font-weight:bold;color:white;cursor:pointer;}
+.search-bar button:hover {background:#ffd366;}
+
+/* Categories */
+.categories {
+  display:flex;justify-content:center;gap:15px;padding:10px 15px;background:var(--card-bg);
+  backdrop-filter:var(--glass);position:sticky;top:80px;z-index:900;overflow-x:auto;
+}
+.categories button {
+  background:none;border:2px solid transparent;color:var(--text);font-weight:bold;cursor:pointer;
+  padding:8px 16px;border-radius:20px;transition:0.3s;white-space:nowrap;
+}
+.categories button.active {background:var(--accent);color:#000;}
+
+/* Skeleton (suspense before the message) */
+.skeleton {background:linear-gradient(90deg,#999,#bbb,#999);background-size:200%;animation:shimmer 1.5s infinite;}
+@keyframes shimmer {0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+.news-card.sk {background:var(--card-bg);backdrop-filter:var(--glass);border-radius:15px;overflow:hidden;display:flex;flex-direction:column;}
+
+/* Message area */
+.news-container {
+  display:flex;justify-content:center;align-items:flex-start;
+  padding:20px 20px 60px;max-width:1400px;margin:auto;min-height:100vh;position:relative;
+}
+.msg-wrap {width:100%;max-width:640px;position:relative;}
+
+/* The message card */
+.msg-card {
+  position:relative;background:var(--card-bg);backdrop-filter:var(--glass);
+  border-radius:22px;padding:30px 24px 26px;text-align:center;
+  border:1.5px solid rgba(255,187,51,.45);
+  box-shadow:0 0 0 rgba(255,187,51,0);
+  animation: cardIn .9s cubic-bezier(0.18,0.89,0.32,1.28) both, glow 3.2s ease-in-out 1s infinite;
+}
+@keyframes cardIn {0%{opacity:0;transform:scale(.6) translateY(40px);}70%{opacity:1;transform:scale(1.04) translateY(-4px);}100%{transform:scale(1) translateY(0);}}
+@keyframes glow {
+  0%,100%{box-shadow:0 0 18px rgba(255,187,51,.18),0 0 40px rgba(0,229,255,.08);}
+  50%{box-shadow:0 0 30px rgba(255,187,51,.38),0 0 60px rgba(0,229,255,.22);}
+}
+.msg-tag {
+  display:inline-block;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--primary);color:#190537;font-weight:700;padding:5px 12px;border-radius:20px;margin-bottom:18px;
+  animation: tagIn .6s ease .5s both;
+}
+@keyframes tagIn {from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:none;}}
+
+.chunk {font-size:1.25rem;line-height:1.7;margin:0 0 14px;min-height:1.7em;}
+.chunk.final {font-size:1.35rem;margin-bottom:6px;}
+.w {display:inline-block;opacity:0;transform:translateY(14px) scale(.9);filter:blur(4px);
+    transition:opacity .45s ease, transform .45s cubic-bezier(0.18,0.89,0.32,1.28), filter .45s ease;
+    margin-right:.28em;}
+.w.in {opacity:1;transform:none;filter:blur(0);}
+.name {color:var(--primary);font-weight:700;text-shadow:0 0 14px rgba(255,187,51,.6);}
+.beauty {color:var(--accent);font-weight:700;text-shadow:0 0 16px rgba(0,229,255,.7);}
+.beauty.in {animation: beautyPulse 1.6s ease-in-out infinite;}
+@keyframes beautyPulse {0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+
+/* custom hand-drawn emoji (SVG, not a system emoji) */
+.smile {display:inline-block;width:104px;height:104px;margin-top:12px;line-height:0;opacity:0;transform:scale(0) rotate(-60deg);
+        filter:drop-shadow(0 6px 14px rgba(255,187,51,.45));}
+.smile svg {width:100%;height:100%;overflow:visible;}
+.smile.in {animation: smileIn 1s cubic-bezier(0.18,0.89,0.32,1.28) forwards, bob 2.4s ease-in-out 1s infinite;}
+@keyframes smileIn {0%{opacity:0;transform:scale(0) rotate(-60deg);}60%{opacity:1;transform:scale(1.4) rotate(15deg);}100%{opacity:1;transform:scale(1) rotate(0);}}
+.smile .eyes {transform-box:fill-box;transform-origin:center;animation: blink 3.8s ease-in-out 1.6s infinite;}
+@keyframes blink {0%,92%,100%{transform:scaleY(1);}95%{transform:scaleY(.08);}}
+.smile .cheek {animation: blushPulse 2.2s ease-in-out infinite;}
+@keyframes blushPulse {0%,100%{opacity:.55;}50%{opacity:1;}}
+.smile .brow {transform-box:fill-box;transform-origin:center;animation: browUp 3.8s ease-in-out 1.6s infinite;}
+@keyframes browUp {0%,90%,100%{transform:translateY(0);}94%{transform:translateY(-3px);}}
+.smile .spk {transform-box:fill-box;transform-origin:center;animation: twinkle 1.8s ease-in-out infinite;}
+.smile .spk.b {animation-delay:.9s;}
+
+/* sparkles (drawn stars) */
+.sparkle {position:absolute;pointer-events:none;width:18px;height:18px;z-index:5;animation: fly 1.6s ease-out forwards;}
+.sparkle svg {width:100%;height:100%;display:block;}
+@keyframes fly {
+  0%{opacity:1;transform:translate(0,0) scale(.4) rotate(0);}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(var(--r));}
+}
+
+.error-message {font-size:1.4rem;text-align:center;margin-top:40px;color:#fff;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <h1>Good Evening</h1>
+  <div class="underline"></div>
+  <div class="emoji">😎</div>
+  <div class="tap-hint">tap to continue</div>
+</div>
+
+<header>Good Evening <span class="cool">😎</span><span class="spark">✨</span><span class="spark b">✨</span></header>
+
+<button class="dark-toggle" onclick="toggleDarkMode()">🌙</button>
+
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search news..." />
+  <button onclick="onInitialSearch()">Search</button>
+</div>
+
+<div class="categories" id="categoryTabs">
+  <button data-category="" class="active">All</button>
+  <button data-category="entertainment">Entertainment</button>
+  <button data-category="gaming">Games</button>
+  <button data-category="f1">F1 News</button>
+</div>
+
+<div class="news-container" id="newsContainer"></div>
+
+<!-- Background music (bgm.mp3 must be in the same folder as this file) -->
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+
+<script>
+let currentCategory = '';
+let running = 0;
+
+function toggleDarkMode() {
+  document.body.classList.toggle('dark');
+}
+
+// The message, split into short chunks so each one lands with a pause
+const chunks = [
+  [{t:'Hiii'}, {t:'Astaah,', c:'name'}],
+  [{t:'How'},{t:'did'},{t:'your'},{t:'exam'},{t:'go'},{t:'today??'}],
+  [{t:'I'},{t:'know'},{t:"you've"},{t:'already'},{t:'sent'},{t:'a'},{t:'few'},{t:'photos,'},{t:'but'},{t:'please'},{t:'send'},{t:'your'},{t:'photo'},{t:'again.'}],
+  [{t:'Because,'},{t:'I'},{t:'mean,'},{t:'how'},{t:'can'},{t:'someone'},{t:'ever'},{t:'get'},{t:'bored'},{t:'of'},{t:'looking'},{t:'at'},{t:'such'},{t:'a'},{t:'pretty',c:'beauty'},{t:'face?',c:'beauty'}]
+];
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function showSkeletons(count = 3) {
+  const container = document.getElementById('newsContainer');
+  container.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+  for (let i = 0; i < count; i++) {
+    const sk = document.createElement('div');
+    sk.className = 'news-card sk';
+    sk.style.marginBottom = '16px';
+    sk.innerHTML = `
+      <div class="skeleton" style="height:90px;"></div>
+      <div style="padding:15px">
+        <div class="skeleton" style="height:20px;width:80%;margin:6px 0;"></div>
+        <div class="skeleton" style="height:14px;width:60%;margin:5px 0;"></div>
+      </div>`;
+    wrap.appendChild(sk);
+  }
+  container.appendChild(wrap);
+}
+
+function sparkleBurst(card, count = 26) {
+  const colors = ['#ffbb33','#00e5ff','#ffe27a','#ffffff'];
+  const rect = card.getBoundingClientRect();
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 0 L14.6 9.4 L24 12 L14.6 14.6 L12 24 L9.4 14.6 L0 12 L9.4 9.4Z" fill="${colors[Math.floor(Math.random()*colors.length)]}"/></svg>`;
+    s.style.left = (rect.width/2 + (Math.random()-.5)*rect.width*.6) + 'px';
+    s.style.top = (rect.height*.65) + 'px';
+    s.style.setProperty('--dx', ((Math.random()-.5)*rect.width*.9) + 'px');
+    s.style.setProperty('--dy', (-60 - Math.random()*180) + 'px');
+    s.style.setProperty('--r', ((Math.random()-.5)*240) + 'deg');
+    s.style.fontSize = (12 + Math.random()*16) + 'px';
+    s.style.animationDelay = (Math.random()*0.35) + 's';
+    card.appendChild(s);
+    setTimeout(() => s.remove(), 2200);
+  }
+}
+
+async function showMessage() {
+  const myRun = ++running;
+  const container = document.getElementById('newsContainer');
+
+  // 1) a short moment of suspense with the skeleton cards
+  showSkeletons();
+  await sleep(1300);
+  if (myRun !== running) return;
+
+  // 2) the card pops in
+  container.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+  const card = document.createElement('div');
+  card.className = 'msg-card';
+  card.innerHTML = `<div class="msg-tag">New message</div>`;
+  wrap.appendChild(card);
+  container.appendChild(wrap);
+
+  // gentle auto-scroll: hide the search bar so she doesn't need to scroll to read
+  const sb = document.querySelector('.search-bar');
+  const hd = document.querySelector('header');
+  const target = Math.max(0, sb.offsetTop + sb.offsetHeight - hd.offsetHeight + 2);
+  window.scrollTo({ top: target, behavior: 'smooth' });
+  await sleep(900);
+
+  // 3) words land one by one, with a pause between chunks
+  for (let ci = 0; ci < chunks.length; ci++) {
+    if (myRun !== running) return;
+    const p = document.createElement('p');
+    p.className = 'chunk' + (ci === chunks.length - 1 ? ' final' : '');
+    card.appendChild(p);
+
+    const spans = chunks[ci].map(w => {
+      const s = document.createElement('span');
+      s.className = 'w' + (w.c ? ' ' + w.c : '');
+      s.textContent = w.t;
+      p.appendChild(s);
+      return s;
+    });
+
+    for (const s of spans) {
+      if (myRun !== running) return;
+      await sleep(120);
+      s.classList.add('in');
+    }
+    await sleep(ci === chunks.length - 2 ? 900 : 650); // longer pause before the last line
+  }
+
+  // 4) the reward: smile pops + sparkles
+  if (myRun !== running) return;
+  const smile = document.createElement('div');
+  smile.className = 'smile';
+  smile.innerHTML = `
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <defs>
+        <radialGradient id="faceG" cx="38%" cy="28%" r="80%">
+          <stop offset="0" stop-color="#ffe9a0"/>
+          <stop offset=".55" stop-color="#ffbb33"/>
+          <stop offset="1" stop-color="#f08a24"/>
+        </radialGradient>
+        <radialGradient id="cheekG">
+          <stop offset="0" stop-color="#ff7a3d" stop-opacity=".85"/>
+          <stop offset="1" stop-color="#ff7a3d" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="60" cy="62" r="46" fill="url(#faceG)"/>
+      <ellipse cx="60" cy="40" rx="26" ry="10" fill="#fff" opacity=".18"/>
+      <ellipse class="cheek" cx="29" cy="74" rx="13" ry="9" fill="url(#cheekG)"/>
+      <ellipse class="cheek" cx="91" cy="74" rx="13" ry="9" fill="url(#cheekG)"/>
+      <path class="brow" d="M33 43 Q42 36 51 41" fill="none" stroke="#2b1240" stroke-width="3.2" stroke-linecap="round"/>
+      <path class="brow" d="M69 41 Q78 36 87 43" fill="none" stroke="#2b1240" stroke-width="3.2" stroke-linecap="round"/>
+      <g class="eyes">
+        <ellipse cx="42" cy="58" rx="6.5" ry="9" fill="#2b1240"/>
+        <ellipse cx="78" cy="58" rx="6.5" ry="9" fill="#2b1240"/>
+        <circle cx="44.6" cy="54.2" r="2.8" fill="#fff"/>
+        <circle cx="80.6" cy="54.2" r="2.8" fill="#fff"/>
+        <circle cx="40" cy="61.5" r="1.3" fill="#fff"/>
+        <circle cx="76" cy="61.5" r="1.3" fill="#fff"/>
+      </g>
+      <path d="M41 77 Q60 101 79 77 Q60 85 41 77Z" fill="#2b1240" stroke="#2b1240" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M50 85 Q60 91 70 85 Q60 82 50 85Z" fill="#ff8a65"/>
+      <path class="spk" d="M104 14 L107 24 L117 27 L107 30 L104 40 L101 30 L91 27 L101 24Z" fill="#00e5ff"/>
+      <path class="spk b" d="M14 30 L16 36 L22 38 L16 40 L14 46 L12 40 L6 38 L12 36Z" fill="#ffffff"/>
+    </svg>`;
+  card.querySelector('.chunk.final').appendChild(document.createElement('br'));
+  card.querySelector('.chunk.final').appendChild(smile);
+  await sleep(120);
+  smile.classList.add('in');
+  sparkleBurst(card);
+}
+
+// Category tabs: same look as before, replays the message
+document.getElementById('categoryTabs').addEventListener('click', function(e) {
+  if (e.target.tagName === 'BUTTON') {
+    document.querySelectorAll('.categories button').forEach(btn => btn.classList.remove('active'));
+    e.target.classList.add('active');
+    currentCategory = e.target.dataset.category;
+    document.body.style.background = (currentCategory === 'f1') ? 'var(--f1-gradient)' : 'var(--bg-gradient)';
+    showMessage();
+  }
+});
+
+function onInitialSearch() { showMessage(); }
+
+// The message now starts when the visitor taps "tap to continue" (see the script below)
+</script>
+
+<!-- Background music: starts when the visitor taps "tap to continue", volume under 50% -->
+<script>
+(function () {
+  const bgm = document.getElementById('bgm');
+  const splash = document.getElementById('splash');
+  const VOLUME = 0.35;          // 35% (keep below 0.5)
+  bgm.volume = VOLUME;
+
+  let entered = false;
+  function enter() {
+    if (entered) return;
+    entered = true;
+
+    // music starts instantly on tap (so the browser allows it)
+    const p = bgm.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+
+    // click feel: press animation + light vibration
+    const hint = splash.querySelector('.tap-hint');
+    hint.classList.add('pressed');
+    if (navigator.vibrate) navigator.vibrate(15);
+
+    // 0.35 sec delay, then splash hides and the message starts
+    setTimeout(function () {
+      splash.classList.add('hide');
+      setTimeout(showMessage, 500);
+    }, 350);
+  }
+
+  splash.addEventListener('click', enter);
+  splash.addEventListener('touchend', function (e) { e.preventDefault(); enter(); }, { passive: false });
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') enter();
+  });
+})();
+</script>
+
+</body>
+</html>
