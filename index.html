@@ -90,9 +90,15 @@ header .spark.b {animation-delay:.6s;}
 
 /* Categories */
 .categories {
-  display:flex;justify-content:center;gap:15px;padding:10px 15px;background:var(--card-bg);
-  backdrop-filter:var(--glass);position:sticky;top:80px;z-index:900;overflow-x:auto;
+  display:flex;justify-content:flex-start;gap:15px;padding:10px 15px;background:var(--card-bg);
+  backdrop-filter:var(--glass);position:sticky;top:var(--header-h,80px);z-index:900;overflow-x:auto;
+  max-width:100%;-webkit-overflow-scrolling:touch;scrollbar-width:none;
 }
+.categories::-webkit-scrollbar { display:none; }
+/* centers the tabs when they fit, but never clips the first/last one when they overflow */
+.categories button:first-child { margin-left:auto; }
+.categories button:last-child { margin-right:auto; }
+.categories button { flex-shrink:0; }
 .categories button {
   background:none;border:2px solid transparent;color:var(--text);font-weight:bold;cursor:pointer;
   padding:8px 16px;border-radius:20px;transition:0.3s;white-space:nowrap;
@@ -131,8 +137,8 @@ header .spark.b {animation-delay:.6s;}
 }
 @keyframes tagIn {from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:none;}}
 
-.chunk {font-size:1.25rem;line-height:1.7;margin:0 0 14px;min-height:1.7em;}
-.chunk.final {font-size:1.35rem;margin-bottom:6px;}
+.chunk {font-size:clamp(1rem,4.4vw,1.12rem);line-height:1.8;margin:0 0 18px;min-height:1.8em;letter-spacing:.01em;}
+.chunk.final {font-size:clamp(1.05rem,4.8vw,1.2rem);margin-bottom:6px;}
 .w {display:inline-block;opacity:0;transform:translateY(14px) scale(.9);filter:blur(4px);
     transition:opacity .45s ease, transform .45s cubic-bezier(0.18,0.89,0.32,1.28), filter .45s ease;
     margin-right:.28em;}
@@ -166,6 +172,31 @@ header .spark.b {animation-delay:.6s;}
 }
 
 .error-message {font-size:1.4rem;text-align:center;margin-top:40px;color:#fff;font-weight:bold;}
+
+/* === MOBILE === */
+@media (max-width: 600px) {
+  :root { --header-h: 62px; }
+  #splash h1 { font-size:2rem; padding:0 16px; }
+  #splash .emoji { font-size:3rem; }
+  #splash .tap-hint { font-size:.78rem; letter-spacing:.26em; margin-top:22px; }
+
+  header { font-size:1.35rem; padding:16px 56px 16px 16px; }
+  header .spark { font-size:1rem; }
+  .dark-toggle { top:10px; right:10px; width:40px; height:40px; padding:0; font-size:1rem; }
+
+  .search-bar { padding:14px 14px; gap:8px; flex-wrap:nowrap; }
+  .search-bar input { min-width:0; padding:11px 12px; font-size:16px; }
+  .search-bar button { padding:11px 14px; flex-shrink:0; }
+
+  .categories { gap:8px; padding:8px 12px; }
+  .categories button { padding:7px 14px; font-size:.85rem; }
+
+  .news-container { padding:14px 14px 48px; }
+  .msg-card { padding:24px 20px 22px; border-radius:20px; }
+  .msg-tag { font-size:.72rem; margin-bottom:16px; }
+  .w { margin-right:.24em; }
+  .smile { width:88px; height:88px; }
+}
 </style>
 </head>
 <body>
